@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -18,6 +19,22 @@ st.set_page_config(
 
 # --- PALETTES DE THÈMES PERSONNALISABLES ---
 THEMES = {
+    "🌌 Tiflow Lilas (Journal Musical)": {
+        "name": "Tiflow Lilas",
+        "bg_gradient": """
+            radial-gradient(circle at 18% 12%, rgba(180, 138, 255, 0.25) 0%, transparent 40%),
+            radial-gradient(circle at 82% 25%, rgba(255, 101, 132, 0.18) 0%, transparent 42%),
+            radial-gradient(circle at 50% 90%, rgba(100, 210, 255, 0.16) 0%, transparent 48%)
+        """,
+        "primary": "#b48aff",
+        "secondary": "#d9bfff",
+        "accent": "#ff6584",
+        "card_hover": "rgba(180, 138, 255, 0.55)",
+        "chart_scale": ["#251e31", "#7e52c8", "#b48aff", "#d9bfff"],
+        "chart_line": "#b48aff",
+        "heatmap_scale": ["#100e16", "#251e31", "#7e52c8", "#d9bfff"],
+        "donut_colors": ["#b48aff", "#ff6584", "#64d2ff", "#ffb800"]
+    },
     "💜 Pulse Néon (OLED Original)": {
         "name": "Pulse Néon",
         "bg_gradient": """
@@ -114,10 +131,10 @@ with st.sidebar:
 # --- INJECTION CSS DYNAMIQUE (GLASSMORPHISM & COULEURS DU THÈME) ---
 st.markdown(f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 
     html, body, [class*="css"] {{
-        font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+        font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
     }}
 
     .stApp {{
@@ -669,8 +686,23 @@ if df_raw is None:
         </div>
         """, unsafe_allow_html=True)
 
-    sc4, sc5 = st.columns(2)
+    sc4, sc5, sc6 = st.columns(3)
     with sc4:
+        st.markdown(f"""
+        <div class="showcase-card">
+            <div class="showcase-icon">👑</div>
+            <div class="showcase-title">Life Récap (Histoire Globale)</div>
+            <div class="showcase-desc">
+                Toute votre vie musicale depuis le tout premier jour : vos piliers intemporels, votre panthéon à vie et story collector.
+            </div>
+            <div style="margin-top: 14px;">
+                <span class="pulse-pill">Depuis toujours</span>
+                <span class="pulse-pill">Panthéon</span>
+                <span class="pulse-pill">Journal</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    with sc5:
         st.markdown(f"""
         <div class="showcase-card">
             <div class="showcase-icon">✨</div>
@@ -684,13 +716,13 @@ if df_raw is None:
             </div>
         </div>
         """, unsafe_allow_html=True)
-    with sc5:
+    with sc6:
         st.markdown(f"""
         <div class="showcase-card">
             <div class="showcase-icon">📸</div>
             <div class="showcase-title">Mon Deezer Wrapped</div>
             <div class="showcase-desc">
-                Votre bilan musical condensé dans une carte visuelle haut de gamme prête à être capturée et partagée sur vos réseaux sociaux.
+                Votre bilan musical condensé dans une story interactive façon Instagram / Deezer prête à être partagée.
             </div>
             <div style="margin-top: 14px;">
                 <span class="pulse-pill">Story Instagram</span>
@@ -795,6 +827,7 @@ else:
     # 3. GESTION DE L'AGENCEMENT DES ONGLETS DANS LA SIDEBAR
     ALL_AVAILABLE_TABS = [
         "📊 Vue d'ensemble",
+        "👑 Life Récap",
         "🧬 ADN & Archétype",
         "🔬 Data Science & Comportement",
         "✨ Découvertes Sur-Mesure",
@@ -922,6 +955,582 @@ else:
                     .sort_values(by=["Minutes", "Écoutes"], ascending=False)
                 )
                 st.dataframe(top_titres, use_container_width=True, hide_index=True)
+
+            # ==========================================
+            # ONGLET : 👑 LIFE RÉCAP (INSPIRÉ DE TIFLOW)
+            # ==========================================
+            elif tab_title == "👑 Life Récap":
+                import html as html_lib
+
+                # Calcul sur l'intégralité de l'historique sans filtre
+                df_life = df.copy()
+                ecoutes_life = df_life[df_life["Listening Time"] >= 30].copy()
+                zaps_life = df_life[df_life["Listening Time"] < 30].copy()
+                uniques_life = ecoutes_life[["Artist", "Song Title", "Album"]].drop_duplicates(subset=["Artist", "Song Title"])
+
+                d_first = df_life["Date"].min()
+                d_last = df_life["Date"].max()
+                nb_jours_total = max(1, (d_last - d_first).days + 1)
+                
+                mois_fr_map = {1: "janvier", 2: "février", 3: "mars", 4: "avril", 5: "mai", 6: "juin", 7: "juillet", 8: "août", 9: "septembre", 10: "octobre", 11: "novembre", 12: "décembre"}
+                str_first = f"{d_first.day} {mois_fr_map.get(d_first.month, '')} {d_first.year}"
+                str_last = f"{d_last.day} {mois_fr_map.get(d_last.month, '')} {d_last.year}"
+
+                tot_h_life = ecoutes_life["Listening Time"].sum() / 3600
+                tot_days_music = tot_h_life / 24
+                nb_art_life = ecoutes_life["Artist"].nunique()
+                nb_tra_life = len(uniques_life)
+                nb_alb_life = ecoutes_life["Album"].nunique()
+                fidelite_life = len(ecoutes_life) / max(1, nb_tra_life)
+                bpm_val_life = ecoutes_life[ecoutes_life["bpm"] > 0]["bpm"]
+                mean_bpm_life = bpm_val_life.mean() if not bpm_val_life.empty else 118
+
+                # Top Titres all-time
+                top_tracks_life = (
+                    ecoutes_life.groupby(["Song Title", "Artist", "cover_url"], as_index=False)
+                    .agg(Minutes=("Listening Time", lambda x: round(x.sum() / 60, 1)), Ecoutes=("Listening Time", "count"))
+                    .sort_values(by=["Minutes", "Ecoutes"], ascending=False)
+                    .head(5)
+                )
+
+                # Top Artistes all-time
+                top_artists_life = (
+                    ecoutes_life.groupby("Artist", as_index=False)["Listening Time"]
+                    .sum()
+                    .sort_values(by="Listening Time", ascending=False)
+                    .head(5)
+                )
+                top_artists_life["Minutes"] = (top_artists_life["Listening Time"] / 60).round(1)
+
+                # Top Album all-time
+                top_album_life = (
+                    ecoutes_life.groupby(["Album", "Artist", "cover_url"], as_index=False)["Listening Time"]
+                    .sum()
+                    .sort_values(by="Listening Time", ascending=False)
+                    .head(1)
+                )
+
+                lt1 = top_tracks_life.iloc[0] if len(top_tracks_life) > 0 else None
+                lt1_title = html_lib.escape(str(lt1["Song Title"])) if lt1 is not None else "Aucun titre"
+                lt1_artist = html_lib.escape(str(lt1["Artist"])) if lt1 is not None else "Inconnu"
+                lt1_cover = lt1["cover_url"] if lt1 is not None and lt1["cover_url"] else (
+                    top_album_life.iloc[0]["cover_url"] if len(top_album_life) > 0 and top_album_life.iloc[0]["cover_url"]
+                    else "https://e-cdns-images.dzcdn.net/images/cover/d41d8cd98f00b204e9800998ecf8427e/500x500-000000-80-0-0.jpg"
+                )
+                lt1_mins = lt1["Minutes"] if lt1 is not None else 0
+                lt1_ecoutes = lt1["Ecoutes"] if lt1 is not None else 0
+
+                la1 = top_artists_life.iloc[0] if len(top_artists_life) > 0 else None
+                la1_name = html_lib.escape(str(la1["Artist"])) if la1 is not None else "Inconnu"
+                la1_mins = la1["Minutes"] if la1 is not None else 0
+
+                lalb1 = top_album_life.iloc[0] if len(top_album_life) > 0 else None
+                lalb1_name = html_lib.escape(str(lalb1["Album"])) if lalb1 is not None else "Inconnu"
+                lalb1_artist = html_lib.escape(str(lalb1["Artist"])) if lalb1 is not None else "Inconnu"
+                lalb1_cover = lalb1["cover_url"] if lalb1 is not None and lalb1["cover_url"] else lt1_cover
+
+                # Bandeau d'en-tête inspiré de Tiflow
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, rgba(180, 138, 255, 0.12) 0%, rgba(26, 22, 34, 0.85) 100%); border: 1px solid rgba(180, 138, 255, 0.28); border-radius: 24px; padding: 26px 30px; margin-bottom: 24px; backdrop-filter: blur(20px);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                        <div>
+                            <span style="font-size: 0.75rem; font-weight: 800; color: #b48aff; text-transform: uppercase; letter-spacing: 0.14em;">✦ LE JOURNAL DE TOUTE VOTRE VIE ✦</span>
+                            <h2 style="color: #FFFFFF; font-size: 2.1rem; font-weight: 800; font-family: 'Space Grotesk', sans-serif; margin: 4px 0 6px 0;">
+                                Life Récap · Votre Odyssée Musicale
+                            </h2>
+                            <p style="color: #A9A0B7; font-size: 0.92rem;">
+                                De <b>{str_first}</b> à <b>{str_last}</b> · <b>{nb_jours_total}</b> jours d'histoire et de découvertes
+                            </p>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="background: rgba(180, 138, 255, 0.15); border: 1px solid #b48aff; color: #d9bfff; padding: 6px 16px; border-radius: 30px; font-weight: 700; font-size: 0.82rem;">
+                                👑 Tout l'historique Deezer
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # Hub des 3 Récapitulatifs (Style Tiflow)
+                rc1, rc2, rc3 = st.columns(3)
+                with rc1:
+                    st.markdown(f"""
+                    <div style="background: #1a1622; border: 1.5px solid #b48aff; border-radius: 18px; padding: 18px; position: relative; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 0.75rem; color: #d9bfff; font-weight: 700; text-transform: uppercase;">DEPUIS TOUJOURS</span>
+                            <span style="color: #b48aff; font-size: 1.2rem; font-weight: 800;">→</span>
+                        </div>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: #FFF; font-family: 'Space Grotesk', sans-serif;">Life Recap<b>.</b></div>
+                        <div style="font-size: 0.82rem; color: #a9a0b7; margin-top: 4px;">Toute ton histoire Deezer en grand format.</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with rc2:
+                    st.markdown(f"""
+                    <div style="background: #1a1622; border: 1px solid #2b2535; border-radius: 18px; padding: 18px; position: relative; overflow: hidden;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 0.75rem; color: #ffb800; font-weight: 700; text-transform: uppercase;">ANNÉE EN COURS</span>
+                            <span style="color: #ffb800; font-size: 1.2rem; font-weight: 800;">→</span>
+                        </div>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: #FFF; font-family: 'Space Grotesk', sans-serif;">Year Recap<b>.</b></div>
+                        <div style="font-size: 0.82rem; color: #a9a0b7; margin-top: 4px;">Ta bande-son de l'année.</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with rc3:
+                    st.markdown(f"""
+                    <div style="background: #1a1622; border: 1px solid #2b2535; border-radius: 18px; padding: 18px; position: relative; overflow: hidden;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 0.75rem; color: #64d2ff; font-weight: 700; text-transform: uppercase;">DERNIERS 30 JOURS</span>
+                            <span style="color: #64d2ff; font-size: 1.2rem; font-weight: 800;">→</span>
+                        </div>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: #FFF; font-family: 'Space Grotesk', sans-serif;">Month Recap<b>.</b></div>
+                        <div style="font-size: 0.82rem; color: #a9a0b7; margin-top: 4px;">Tes titres du mois.</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                # 4 Métriques Monumentales
+                k1, k2, k3, k4 = st.columns(4)
+                k1.metric("Temps de Vie Musical", f"{tot_h_life:.1f} h", f"{tot_days_music:.1f} jours réels", delta_color="off")
+                k2.metric("Artistes Explorés", f"{nb_art_life}", "à travers le monde", delta_color="off")
+                k3.metric("Titres Uniques", f"{nb_tra_life}", f"{len(ecoutes_life)} écoutes totales", delta_color="off")
+                k4.metric("Albums Découverts", f"{nb_alb_life}", f"Tempo {mean_bpm_life:.0f} BPM", delta_color="off")
+
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                # HTML de la Story Interactive Spéciale "Life Recap" (Inspirée de Tiflow)
+                life_tracks_list_html = ""
+                for rank, (_, row) in enumerate(top_tracks_life.iloc[1:5].iterrows(), start=2):
+                    t_title = html_lib.escape(str(row['Song Title']))
+                    t_art = html_lib.escape(str(row['Artist']))
+                    life_tracks_list_html += f"""
+                    <div style="display:flex;justify-content:space-between;align-items:center;background:#251e31;padding:7px 10px;border-radius:12px;margin-bottom:6px;border:1px solid #3d2b55;">
+                        <div style="display:flex;align-items:center;gap:8px;overflow:hidden;">
+                            <span style="font-weight:800;color:#b48aff;font-size:0.8rem;">#{rank}</span>
+                            <div style="text-align:left;overflow:hidden;">
+                                <div style="font-size:0.8rem;font-weight:700;color:#f7f3fc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">{t_title}</div>
+                                <div style="font-size:0.68rem;color:#a9a0b7;">{t_art}</div>
+                            </div>
+                        </div>
+                        <span style="font-size:0.72rem;color:#d9bfff;font-weight:700;">{row['Minutes']:.0f}m</span>
+                    </div>"""
+
+                life_story_html = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+    * {{ box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Manrope', -apple-system, sans-serif; }}
+    body {{
+        background: transparent;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0;
+    }}
+    .story-wrapper {{
+        width: 375px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }}
+    .story-screen {{
+        position: relative;
+        width: 375px;
+        height: 620px;
+        border-radius: 28px;
+        overflow: hidden;
+        border: 2px solid #b48aff;
+        box-shadow: 0 25px 55px rgba(0, 0, 0, 0.9), 0 0 40px rgba(180, 138, 255, 0.25);
+        background: #100e16;
+        background-image: radial-gradient(circle at 50% 10%, rgba(180, 138, 255, 0.28) 0%, transparent 50%), radial-gradient(circle at 85% 90%, rgba(255, 101, 132, 0.16) 0%, transparent 45%);
+        display: flex;
+        flex-direction: column;
+    }}
+    .progress-bar-container {{
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        right: 14px;
+        height: 4px;
+        display: flex;
+        gap: 5px;
+        z-index: 50;
+    }}
+    .progress-seg {{
+        flex: 1;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.18);
+        border-radius: 4px;
+        transition: background 0.25s ease;
+    }}
+    .progress-seg.completed {{
+        background: #FFFFFF;
+    }}
+    .progress-seg.active {{
+        background: #b48aff;
+        box-shadow: 0 0 10px #b48aff;
+    }}
+    .tap-zone {{
+        position: absolute;
+        top: 25px;
+        bottom: 40px;
+        width: 45%;
+        z-index: 40;
+        cursor: pointer;
+    }}
+    .tap-left {{ left: 0; }}
+    .tap-right {{ right: 0; }}
+    .slide {{
+        display: none;
+        flex-direction: column;
+        height: 100%;
+        padding: 30px 18px 18px 18px;
+        text-align: center;
+        z-index: 10;
+        animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        justify-content: space-between;
+    }}
+    .slide.active {{
+        display: flex;
+    }}
+    @keyframes slideIn {{
+        from {{ opacity: 0; transform: scale(0.96); }}
+        to {{ opacity: 1; transform: scale(1); }}
+    }}
+    .story-badge {{
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #b48aff;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        margin-top: 6px;
+        margin-bottom: 4px;
+    }}
+    .story-title {{
+        color: #FFFFFF;
+        font-size: 1.55rem;
+        font-weight: 800;
+        font-family: 'Space Grotesk', sans-serif;
+        margin-bottom: 6px;
+        line-height: 1.25;
+    }}
+    .story-sub {{
+        color: #A9A0B7;
+        font-size: 0.82rem;
+        line-height: 1.4;
+    }}
+    .story-controls {{
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        margin-top: 12px;
+        padding: 0 4px;
+    }}
+    .ctrl-btn {{
+        background: #1a1622;
+        border: 1px solid #2b2535;
+        color: #f7f3fc;
+        padding: 7px 15px;
+        border-radius: 12px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }}
+    .ctrl-btn:hover {{
+        background: #b48aff;
+        color: #100e16;
+        border-color: #b48aff;
+        transform: translateY(-1px);
+    }}
+    .slide-num {{
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #a9a0b7;
+    }}
+</style>
+</head>
+<body>
+<div class="story-wrapper">
+    <div class="story-screen" id="storyScreen">
+        <div class="progress-bar-container">
+            <div class="progress-seg" id="seg-0"></div>
+            <div class="progress-seg" id="seg-1"></div>
+            <div class="progress-seg" id="seg-2"></div>
+            <div class="progress-seg" id="seg-3"></div>
+            <div class="progress-seg" id="seg-4"></div>
+            <div class="progress-seg" id="seg-5"></div>
+        </div>
+
+        <div class="tap-zone tap-left" onclick="prevSlide(event)"></div>
+        <div class="tap-zone tap-right" onclick="nextSlide(event)"></div>
+
+        <!-- SLIDE 1 : POSTER D'OUVERTURE -->
+        <div class="slide active" id="slide-0">
+            <div>
+                <div class="story-badge">✦ TOUT TON HISTORIQUE DEEZER ✦</div>
+                <div style="font-size: 2.6rem; margin: 10px 0 2px 0;">👑</div>
+                <div class="story-title">Life Recap.</div>
+                <div class="story-sub">Ton écoute résumée en quelques histoires incontournables.</div>
+            </div>
+
+            <div style="background: #1a1622; border: 1px solid #2b2535; border-radius: 20px; padding: 22px 14px;">
+                <div style="font-size: 0.72rem; color: #b48aff; font-weight: 800; text-transform: uppercase;">DEPUIS LE PREMIER JOUR</div>
+                <div style="font-size: 1.15rem; font-weight: 800; color: #FFF; margin: 6px 0;">{str_first}</div>
+                <div style="font-size: 0.82rem; color: #a9a0b7;">
+                    Déjà <b>{nb_jours_total} jours</b> passés à rythmer ta vie avec Deezer.
+                </div>
+            </div>
+
+            <div style="font-size: 0.75rem; color: #847a94;">
+                Touchez à droite pour démarrer le voyage →
+            </div>
+        </div>
+
+        <!-- SLIDE 2 : L'ODYSSÉE EN CHIFFRES -->
+        <div class="slide" id="slide-1">
+            <div>
+                <div class="story-badge">TEMPS D'ÉCOUTE CUMULÉ</div>
+                <div class="story-title">Les Heures d'une Vie</div>
+                <div class="story-sub">La somme de chaque note et de chaque refrain.</div>
+            </div>
+
+            <div style="background: #1a1622; border: 1px solid #3d2b55; border-radius: 20px; padding: 24px 14px;">
+                <div style="font-size: 3.2rem; font-weight: 900; color: #f7f3fc; text-shadow: 0 0 25px rgba(180, 138, 255, 0.5);">
+                    {tot_h_life:.0f}<span style="font-size: 1.6rem; color: #b48aff;"> h</span>
+                </div>
+                <div style="font-size: 0.88rem; color: #d9bfff; margin-top: 6px; font-weight: 600;">
+                    Soit {tot_days_music:.1f} jours complets en immersion sonore
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div style="background: #1a1622; border: 1px solid #2b2535; border-radius: 14px; padding: 10px;">
+                    <div style="font-size: 0.68rem; color: #a9a0b7;">ARTISTES CROISÉS</div>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: #FFF;">{nb_art_life}</div>
+                </div>
+                <div style="background: #1a1622; border: 1px solid #2b2535; border-radius: 14px; padding: 10px;">
+                    <div style="font-size: 0.68rem; color: #a9a0b7;">TITRES ÉCOUTÉS</div>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: #FFF;">{len(ecoutes_life)}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3 : LE TITRE N°1 DE TOUS LES TEMPS -->
+        <div class="slide" id="slide-2">
+            <div>
+                <div class="story-badge">TON HYMNE ÉTERNEL</div>
+                <div class="story-title">Ton Titre N°1.</div>
+            </div>
+
+            <div>
+                <img src="{lt1_cover}" style="width: 155px; height: 155px; border-radius: 20px; box-shadow: 0 12px 35px rgba(0,0,0,0.8), 0 0 25px rgba(180, 138, 255, 0.4); margin-bottom: 8px; object-fit: cover;">
+                <div style="font-size: 1.2rem; font-weight: 800; color: #FFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 310px; margin: 0 auto; font-family: 'Space Grotesk', sans-serif;">
+                    {lt1_title}
+                </div>
+                <div style="font-size: 0.88rem; color: #d9bfff; font-weight: 600; margin-bottom: 4px;">
+                    {lt1_artist}
+                </div>
+                <div style="font-size: 0.78rem; color: #a9a0b7;">
+                    {lt1_mins:.0f} minutes · {lt1_ecoutes} lectures lancées
+                </div>
+            </div>
+
+            <div style="background: #1a1622; border: 1px solid #2b2535; border-radius: 14px; padding: 10px;">
+                <div style="font-size: 0.75rem; color: #b48aff; font-weight: 700;">Le titre le plus écouté de toute ton histoire Deezer.</div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4 : L'ARTISTE DE TOUJOURS -->
+        <div class="slide" id="slide-3">
+            <div>
+                <div class="story-badge">LE GOAT ABSOLU</div>
+                <div class="story-title">Ton Artiste N°1.</div>
+                <div class="story-sub">Le compagnon sonore de toutes tes années.</div>
+            </div>
+
+            <div style="background: #1a1622; border: 1.5px solid #b48aff; border-radius: 22px; padding: 22px 14px;">
+                <div style="font-size: 2.2rem; margin-bottom: 4px;">👑</div>
+                <div style="font-size: 1.6rem; font-weight: 900; color: #FFF; font-family: 'Space Grotesk', sans-serif;">{la1_name}</div>
+                <div style="font-size: 0.88rem; color: #d9bfff; margin-top: 4px;">
+                    <b>{la1_mins:.0f} minutes</b> passées ensemble
+                </div>
+            </div>
+
+            <div style="background: #1a1622; border: 1px solid #2b2535; border-radius: 14px; padding: 10px;">
+                <div style="font-size: 0.74rem; color: #a9a0b7;">
+                    Indice fidélité : <b>{fidelite_life:.1f}x</b> écoutes moyennes par titre.
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 5 : LE PANTHÉON DES TITRES (TOP 5) -->
+        <div class="slide" id="slide-4">
+            <div>
+                <div class="story-badge">LE PANTHÉON À VIE</div>
+                <div class="story-title">À réécouter.</div>
+                <div class="story-sub">Les 5 morceaux qui ont marqué toutes tes années.</div>
+            </div>
+
+            <div style="background: #1a1622; border-radius: 16px; padding: 10px; border: 1px solid #2b2535;">
+                {life_tracks_list_html}
+            </div>
+
+            <div style="font-size: 0.72rem; color: #847a94;">
+                ✦ Des classiques gravés dans ton ADN sonore ✦
+            </div>
+        </div>
+
+        <!-- SLIDE 6 : LA CARTE COLLECTOR LIFE RÉCAP -->
+        <div class="slide" id="slide-5">
+            <div>
+                <div class="story-badge">✦ LA CARTE COLLECTOR ✦</div>
+                <div class="story-title">Life Récap Bilan.</div>
+            </div>
+
+            <div style="background: #1a1622; border: 1.5px solid #b48aff; border-radius: 20px; padding: 16px 14px; box-shadow: 0 15px 35px rgba(0,0,0,0.7);">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; text-align: left;">
+                    <img src="{lt1_cover}" style="width: 58px; height: 58px; border-radius: 12px; object-fit: cover;">
+                    <div style="overflow: hidden;">
+                        <div style="font-size: 0.65rem; color: #b48aff; font-weight: 800; text-transform: uppercase;">MON HYMNE À VIE</div>
+                        <div style="font-size: 0.92rem; font-weight: 800; color: #FFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 190px;">{lt1_title}</div>
+                        <div style="font-size: 0.74rem; color: #AAA;">{lt1_artist}</div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                    <div style="background: #251e31; border-radius: 10px; padding: 8px; text-align: center;">
+                        <div style="font-size: 0.65rem; color: #a9a0b7;">TEMPS À VIE</div>
+                        <div style="font-size: 1.1rem; font-weight: 800; color: #FFF;">{tot_h_life:.0f} h</div>
+                    </div>
+                    <div style="background: #251e31; border-radius: 10px; padding: 8px; text-align: center;">
+                        <div style="font-size: 0.65rem; color: #a9a0b7;">ARTISTE #1</div>
+                        <div style="font-size: 0.95rem; font-weight: 800; color: #FFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{la1_name}</div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div style="background: #251e31; border-radius: 10px; padding: 8px; text-align: center;">
+                        <div style="font-size: 0.65rem; color: #a9a0b7;">HISTOIRE</div>
+                        <div style="font-size: 0.95rem; font-weight: 800; color: #FFF;">{nb_jours_total} jours</div>
+                    </div>
+                    <div style="background: #251e31; border-radius: 10px; padding: 8px; text-align: center;">
+                        <div style="font-size: 0.65rem; color: #a9a0b7;">ARTISTES</div>
+                        <div style="font-size: 0.95rem; font-weight: 800; color: #FFF;">{nb_art_life}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="font-size: 0.68rem; color: #847a94; letter-spacing: 0.05em; margin-top: 6px;">
+                ✦ TIFLOW INSPIRATION · DEEZER PULSE STUDIO ✦
+            </div>
+        </div>
+    </div>
+
+    <div class="story-controls">
+        <button class="ctrl-btn" onclick="prevSlide(event)">◀ Précédent</button>
+        <span class="slide-num" id="slideNum">1 / 6</span>
+        <button class="ctrl-btn" onclick="nextSlide(event)">Suivant ▶</button>
+    </div>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const totalSlides = 6;
+
+    function updateStory() {{
+        for (let i = 0; i < totalSlides; i++) {{
+            const slide = document.getElementById('slide-' + i);
+            const seg = document.getElementById('seg-' + i);
+            if (slide) {{
+                slide.classList.remove('active');
+                if (i === currentSlide) slide.classList.add('active');
+            }}
+            if (seg) {{
+                seg.classList.remove('active', 'completed');
+                if (i < currentSlide) seg.classList.add('completed');
+                else if (i === currentSlide) seg.classList.add('active');
+            }}
+        }}
+        const numEl = document.getElementById('slideNum');
+        if (numEl) numEl.textContent = (currentSlide + 1) + ' / ' + totalSlides;
+    }}
+
+    function nextSlide(e) {{
+        if (e) e.stopPropagation();
+        if (currentSlide < totalSlides - 1) {{
+            currentSlide++;
+            updateStory();
+        }}
+    }}
+
+    function prevSlide(e) {{
+        if (e) e.stopPropagation();
+        if (currentSlide > 0) {{
+            currentSlide--;
+            updateStory();
+        }}
+    }}
+
+    updateStory();
+
+    document.addEventListener('keydown', function(e) {{
+        if (e.key === 'ArrowRight' || e.key === ' ') {{
+            nextSlide();
+        }} else if (e.key === 'ArrowLeft') {{
+            prevSlide();
+        }}
+    }});
+</script>
+</body>
+</html>"""
+
+                col_life_story, col_life_details = st.columns([1, 1])
+                with col_life_story:
+                    components.html(life_story_html, height=690)
+
+                with col_life_details:
+                    st.markdown("### 📈 Chronologie Musicale (Évolution des Écoutes)")
+                    st.caption("Volume d'écoutes réparties à travers le temps depuis votre toute première session.")
+                    
+                    df_life["Mois_Annee"] = df_life["Date"].dt.to_period("M").astype(str)
+                    evo_df = df_life.groupby("Mois_Annee")["Listening Time"].count().reset_index()
+                    evo_df.columns = ["Période", "Écoutes"]
+                    
+                    fig_evo = px.bar(
+                        evo_df,
+                        x="Période",
+                        y="Écoutes",
+                        color="Écoutes",
+                        color_continuous_scale=["#251e31", "#7e52c8", "#b48aff", "#d9bfff"]
+                    )
+                    fig_evo.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        font=dict(color="#E5E5EA"),
+                        coloraxis_showscale=False,
+                        xaxis=dict(title="", showgrid=False),
+                        yaxis=dict(title="", gridcolor="rgba(255,255,255,0.06)"),
+                        margin=dict(l=10, r=10, t=10, b=10),
+                        height=240
+                    )
+                    st.plotly_chart(fig_evo, use_container_width=True)
+
+                    st.markdown("#### 🏆 Le Panthéon des Artistes de Toujours")
+                    top_art_table = top_artists_life[["Artist", "Minutes"]].copy()
+                    top_art_table.columns = ["Artiste", "Temps d'écoute (min)"]
+                    st.dataframe(top_art_table, use_container_width=True, hide_index=True)
+
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.download_button(
+                        label="📥 Télécharger ma Story Life Récap (Fichier HTML complet)",
+                        data=life_story_html,
+                        file_name="mon_deezer_life_recap.html",
+                        mime="text/html",
+                        use_container_width=True
+                    )
 
             # ==========================================
             # ONGLET : 🧬 ADN & ARCHÉTYPE MUSICAL
@@ -1142,113 +1751,487 @@ else:
                     st.warning("Pas assez de données d'artistes identifiés pour générer des suggestions.")
 
             # ==========================================
-            # ONGLET : 📸 MON DEEZER WRAPPED
+            # ONGLET : 📸 MON DEEZER WRAPPED (STORY INTERACTIVE)
             # ==========================================
             elif tab_title == "📸 Mon Deezer Wrapped":
-                st.subheader("📸 Votre Carte Deezer Pulse Wrapped")
-                st.caption("Un récapitulatif ultra-visuel façon Story Instagram prêt à être partagé.")
+                import html as html_lib
+                st.subheader("📸 Votre Story Interactive « My Deezer Year »")
+                st.caption("Naviguez comme dans les stories Deezer / Instagram : touchez l'écran à droite pour avancer, à gauche pour reculer !")
 
-                # Calcul des éléments phares pour la carte
-                top_art_name = ecoutes_valides.groupby("Artist")["Listening Time"].sum().idxmax() if not ecoutes_valides.empty else "Artiste Inconnu"
-                top_track_row = ecoutes_valides.groupby(["Song Title", "Artist"])["Listening Time"].sum().idxmax() if not ecoutes_valides.empty else ("Titre", "Artiste")
-                top_album_row = ecoutes_valides.groupby(["Album", "cover_url"])["Listening Time"].sum().idxmax() if not ecoutes_valides.empty else ("Album", "")
-                
-                wrapped_cover = top_album_row[1] if top_album_row[1] else "https://e-cdns-images.dzcdn.net/images/cover/d41d8cd98f00b204e9800998ecf8427e/500x500-000000-80-0-0.jpg"
+                # Calcul des données phares
+                top_tracks_story = (
+                    ecoutes_valides.groupby(["Song Title", "Artist", "cover_url"], as_index=False)
+                    .agg(Minutes=("Listening Time", lambda x: round(x.sum() / 60, 1)), Ecoutes=("Listening Time", "count"))
+                    .sort_values(by=["Minutes", "Ecoutes"], ascending=False)
+                    .head(5)
+                )
+
+                top_artists_story = (
+                    ecoutes_valides.groupby("Artist", as_index=False)["Listening Time"]
+                    .sum()
+                    .sort_values(by="Listening Time", ascending=False)
+                    .head(5)
+                )
+                top_artists_story["Minutes"] = (top_artists_story["Listening Time"] / 60).round(1)
+
+                top_album_story = (
+                    ecoutes_valides.groupby(["Album", "Artist", "cover_url"], as_index=False)["Listening Time"]
+                    .sum()
+                    .sort_values(by="Listening Time", ascending=False)
+                    .head(1)
+                )
+
                 total_hours_w = ecoutes_valides["Listening Time"].sum() / 3600
+                total_days_w = total_hours_w / 24
                 arch_name_w = archetype_data['name'] if archetype_data else 'Mélomane'
                 arch_icon_w = archetype_data['icon'] if archetype_data else '✦'
+                arch_tagline_w = archetype_data['tagline'] if archetype_data else 'Passionné de musique'
+                arch_desc_w = archetype_data['desc'] if archetype_data else 'La musique rythme votre quotidien.'
+                arch_badges_w = archetype_data['badges'] if archetype_data else ['#DeezerPulse', '#Passion']
+
+                top_t1 = top_tracks_story.iloc[0] if len(top_tracks_story) > 0 else None
+                top_t1_title = html_lib.escape(str(top_t1["Song Title"])) if top_t1 is not None else "Aucun titre"
+                top_t1_artist = html_lib.escape(str(top_t1["Artist"])) if top_t1 is not None else "Inconnu"
+                top_t1_cover = top_t1["cover_url"] if top_t1 is not None and top_t1["cover_url"] else (
+                    top_album_story.iloc[0]["cover_url"] if len(top_album_story) > 0 and top_album_story.iloc[0]["cover_url"] 
+                    else "https://e-cdns-images.dzcdn.net/images/cover/d41d8cd98f00b204e9800998ecf8427e/500x500-000000-80-0-0.jpg"
+                )
+                top_t1_mins = top_t1["Minutes"] if top_t1 is not None else 0
+                top_t1_ecoutes = top_t1["Ecoutes"] if top_t1 is not None else 0
+
+                top_a1 = top_artists_story.iloc[0] if len(top_artists_story) > 0 else None
+                top_a1_name = html_lib.escape(str(top_a1["Artist"])) if top_a1 is not None else "Inconnu"
+                top_a1_mins = top_a1["Minutes"] if top_a1 is not None else 0
+
+                tracks_list_html = ""
+                for rank, (_, row) in enumerate(top_tracks_story.iloc[1:5].iterrows(), start=2):
+                    t_title = html_lib.escape(str(row['Song Title']))
+                    t_art = html_lib.escape(str(row['Artist']))
+                    tracks_list_html += f"""
+                    <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.06);padding:6px 10px;border-radius:10px;margin-bottom:5px;">
+                        <div style="display:flex;align-items:center;gap:8px;overflow:hidden;">
+                            <span style="font-weight:800;color:{current_theme['primary']};font-size:0.8rem;">#{rank}</span>
+                            <div style="text-align:left;overflow:hidden;">
+                                <div style="font-size:0.78rem;font-weight:700;color:#FFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">{t_title}</div>
+                                <div style="font-size:0.68rem;color:#AAA;">{t_art}</div>
+                            </div>
+                        </div>
+                        <span style="font-size:0.72rem;color:#8E8E93;font-weight:600;">{row['Minutes']:.0f}m</span>
+                    </div>"""
+
+                artists_list_html = ""
+                medals = ["🥈 #2", "🥉 #3", "#4", "#5"]
+                for i, (_, row) in enumerate(top_artists_story.iloc[1:5].iterrows()):
+                    med = medals[i] if i < len(medals) else f"#{i+2}"
+                    a_name = html_lib.escape(str(row['Artist']))
+                    artists_list_html += f"""
+                    <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.06);padding:7px 12px;border-radius:10px;margin-bottom:5px;">
+                        <span style="font-weight:800;color:{current_theme['secondary']};font-size:0.8rem;">{med}</span>
+                        <span style="font-weight:700;color:#FFFFFF;font-size:0.85rem;text-align:left;flex:1;margin-left:10px;">{a_name}</span>
+                        <span style="font-size:0.72rem;color:#8E8E93;font-weight:600;">{row['Minutes']:.0f} min</span>
+                    </div>"""
+
+                badges_html_str = "".join([f"<span class='story-pill'>{html_lib.escape(str(b))}</span>" for b in arch_badges_w])
+
+                story_html_code = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+    * {{ box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; }}
+    body {{
+        background: transparent;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0;
+    }}
+    .story-wrapper {{
+        width: 375px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }}
+    .story-screen {{
+        position: relative;
+        width: 375px;
+        height: 615px;
+        border-radius: 32px;
+        overflow: hidden;
+        border: 2px solid {current_theme['primary']};
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 35px {current_theme['primary']}25;
+        background: #08080C;
+        background-image: {current_theme['bg_gradient']};
+        display: flex;
+        flex-direction: column;
+    }}
+    .progress-bar-container {{
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        right: 14px;
+        height: 4px;
+        display: flex;
+        gap: 5px;
+        z-index: 50;
+    }}
+    .progress-seg {{
+        flex: 1;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.22);
+        border-radius: 4px;
+        transition: background 0.25s ease;
+    }}
+    .progress-seg.completed {{
+        background: #FFFFFF;
+    }}
+    .progress-seg.active {{
+        background: {current_theme['primary']};
+        box-shadow: 0 0 10px {current_theme['primary']};
+    }}
+    .tap-zone {{
+        position: absolute;
+        top: 25px;
+        bottom: 40px;
+        width: 45%;
+        z-index: 40;
+        cursor: pointer;
+    }}
+    .tap-left {{ left: 0; }}
+    .tap-right {{ right: 0; }}
+    .slide {{
+        display: none;
+        flex-direction: column;
+        height: 100%;
+        padding: 30px 18px 18px 18px;
+        text-align: center;
+        z-index: 10;
+        animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        justify-content: space-between;
+    }}
+    .slide.active {{
+        display: flex;
+    }}
+    @keyframes slideIn {{
+        from {{ opacity: 0; transform: scale(0.96); }}
+        to {{ opacity: 1; transform: scale(1); }}
+    }}
+    .story-badge {{
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: {current_theme['primary']};
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-top: 6px;
+        margin-bottom: 4px;
+    }}
+    .story-title {{
+        color: #FFFFFF;
+        font-size: 1.42rem;
+        font-weight: 800;
+        margin-bottom: 6px;
+        line-height: 1.25;
+    }}
+    .story-sub {{
+        color: #A1A1A6;
+        font-size: 0.82rem;
+        line-height: 1.4;
+    }}
+    .story-pill {{
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 20px;
+        padding: 4px 10px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: {current_theme['secondary']};
+        margin: 2px 2px;
+    }}
+    .story-controls {{
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        margin-top: 12px;
+        padding: 0 4px;
+    }}
+    .ctrl-btn {{
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: #FFFFFF;
+        padding: 7px 15px;
+        border-radius: 12px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }}
+    .ctrl-btn:hover {{
+        background: {current_theme['primary']};
+        border-color: {current_theme['primary']};
+        transform: translateY(-1px);
+    }}
+    .slide-num {{
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #8E8E93;
+    }}
+</style>
+</head>
+<body>
+<div class="story-wrapper">
+    <div class="story-screen" id="storyScreen">
+        <div class="progress-bar-container">
+            <div class="progress-seg" id="seg-0"></div>
+            <div class="progress-seg" id="seg-1"></div>
+            <div class="progress-seg" id="seg-2"></div>
+            <div class="progress-seg" id="seg-3"></div>
+            <div class="progress-seg" id="seg-4"></div>
+        </div>
+
+        <div class="tap-zone tap-left" onclick="prevSlide(event)"></div>
+        <div class="tap-zone tap-right" onclick="nextSlide(event)"></div>
+
+        <!-- SLIDE 1 : INTRO -->
+        <div class="slide active" id="slide-0">
+            <div>
+                <div class="story-badge">✦ MY DEEZER PULSE STORY ✦</div>
+                <div style="font-size: 2.3rem; margin: 10px 0 2px 0;">✨</div>
+                <div class="story-title">Votre Année en Musique</div>
+                <div class="story-sub">Chaque note a forgé vos souvenirs. Voici ce que révèlent vos habitudes.</div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 20px 14px; backdrop-filter: blur(10px);">
+                <div style="font-size: 0.72rem; color: #8E8E93; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">TEMPS D'ÉCOUTE TOTAL</div>
+                <div style="font-size: 2.8rem; font-weight: 900; color: #FFFFFF; text-shadow: 0 0 25px {current_theme['primary']}55; margin: 4px 0;">
+                    {total_hours_w:.1f}<span style="font-size: 1.4rem; color: {current_theme['primary']};"> h</span>
+                </div>
+                <div style="font-size: 0.82rem; color: #C7C7CC; line-height: 1.4;">
+                    Soit environ <b>{total_days_w:.1f} jours entiers</b> de musique non-stop !
+                </div>
+            </div>
+
+            <div>
+                <div style="margin-bottom: 10px;">
+                    <span class="story-pill">{len(ecoutes_valides)} titres validés</span>
+                    <span class="story-pill">{ratio_fidelite:.1f}x fidélité</span>
+                </div>
+                <div style="font-size: 0.73rem; color: #636366;">
+                    Touchez l'écran à droite pour avancer →
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2 : TOP MORCEAUX -->
+        <div class="slide" id="slide-1">
+            <div>
+                <div class="story-badge">VOTRE TITRE INCONTOURNABLE</div>
+                <div class="story-title">Le Hit de Votre Année</div>
+            </div>
+
+            <div>
+                <img src="{top_t1_cover}" style="width: 145px; height: 145px; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px {current_theme['primary']}40; margin-bottom: 8px; object-fit: cover;">
+                <div style="font-size: 1.1rem; font-weight: 800; color: #FFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; margin: 0 auto;">
+                    {top_t1_title}
+                </div>
+                <div style="font-size: 0.85rem; color: {current_theme['secondary']}; font-weight: 600; margin-bottom: 3px;">
+                    {top_t1_artist}
+                </div>
+                <div style="font-size: 0.74rem; color: #8E8E93;">
+                    {top_t1_mins:.0f} minutes • {top_t1_ecoutes} écoutes
+                </div>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.4); border-radius: 14px; padding: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.68rem; color: #8E8E93; text-transform: uppercase; margin-bottom: 5px; font-weight: 700;">Le reste du Top 5</div>
+                {tracks_list_html}
+            </div>
+        </div>
+
+        <!-- SLIDE 3 : TOP ARTISTES -->
+        <div class="slide" id="slide-2">
+            <div>
+                <div class="story-badge">VOS PILIERS MUSICAUX</div>
+                <div class="story-title">Vos Artistes N°1</div>
+                <div class="story-sub">Ceux qui ne vous ont jamais quitté.</div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 14px; backdrop-filter: blur(10px);">
+                <div style="font-size: 1.8rem; margin-bottom: 2px;">👑</div>
+                <div style="font-size: 0.7rem; color: {current_theme['primary']}; font-weight: 800; text-transform: uppercase;">ARTISTE #1 INCONTESTÉ</div>
+                <div style="font-size: 1.4rem; font-weight: 900; color: #FFF; margin: 3px 0;">{top_a1_name}</div>
+                <div style="font-size: 0.8rem; color: #C7C7CC;">{top_a1_mins:.0f} minutes passées ensemble</div>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.4); border-radius: 14px; padding: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.68rem; color: #8E8E93; text-transform: uppercase; margin-bottom: 5px; font-weight: 700;">Le classement des artistes</div>
+                {artists_list_html}
+            </div>
+        </div>
+
+        <!-- SLIDE 4 : ARCHÉTYPE & ADN -->
+        <div class="slide" id="slide-3">
+            <div>
+                <div class="story-badge">VOTRE AURA SONORE</div>
+                <div class="story-title">Votre Archétype</div>
+            </div>
+
+            <div style="background: linear-gradient(145deg, rgba(30, 30, 42, 0.7) 0%, rgba(15, 15, 22, 0.85) 100%); border: 1px solid {current_theme['card_hover']}; border-radius: 20px; padding: 18px 14px; box-shadow: 0 12px 35px rgba(0,0,0,0.7);">
+                <div style="font-size: 2.6rem; margin-bottom: 4px;">{arch_icon_w}</div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: {current_theme['primary']}; text-transform: uppercase; letter-spacing: 0.08em;">
+                    {html_lib.escape(str(arch_tagline_w))}
+                </div>
+                <div style="font-size: 1.4rem; font-weight: 900; color: #FFFFFF; margin: 4px 0 8px 0;">
+                    {html_lib.escape(str(arch_name_w))}
+                </div>
+                <div style="font-size: 0.8rem; color: #C7C7CC; line-height: 1.45; margin-bottom: 10px;">
+                    {html_lib.escape(str(arch_desc_w))}
+                </div>
+                <div>{badges_html_str}</div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.04); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.72rem; color: #8E8E93;">STAT COMPORTEMENTALE</div>
+                <div style="font-size: 0.92rem; font-weight: 700; color: #FFF; margin-top: 2px;">
+                    {archetype_data['stats']['pct_nuit']:.0f}% d'écoutes de nuit • Tempo {archetype_data['stats']['mean_bpm']:.0f} BPM
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 5 : GRAND BILAN (CARTE RÉCAPITULATIVE) -->
+        <div class="slide" id="slide-4">
+            <div>
+                <div class="story-badge">✦ LE GRAND BILAN ✦</div>
+                <div class="story-title">Mon Deezer Wrapped</div>
+            </div>
+
+            <div style="background: rgba(25, 25, 35, 0.88); border: 1.5px solid {current_theme['primary']}; border-radius: 20px; padding: 16px 14px; box-shadow: 0 15px 35px rgba(0,0,0,0.7); backdrop-filter: blur(15px);">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; text-align: left;">
+                    <img src="{top_t1_cover}" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 15px rgba(0,0,0,0.6);">
+                    <div style="overflow: hidden;">
+                        <div style="font-size: 0.68rem; color: {current_theme['primary']}; font-weight: 800; text-transform: uppercase;">{arch_icon_w} {html_lib.escape(str(arch_name_w))}</div>
+                        <div style="font-size: 0.92rem; font-weight: 800; color: #FFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">{top_t1_title}</div>
+                        <div style="font-size: 0.75rem; color: #AAA;">{top_t1_artist}</div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 8px; text-align: center;">
+                        <div style="font-size: 0.65rem; color: #8E8E93;">TEMPS TOTAL</div>
+                        <div style="font-size: 1.05rem; font-weight: 800; color: #FFF;">{total_hours_w:.1f} h</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 8px; text-align: center;">
+                        <div style="font-size: 0.65rem; color: #8E8E93;">TOP ARTISTE</div>
+                        <div style="font-size: 0.92rem; font-weight: 800; color: #FFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{top_a1_name}</div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 8px; text-align: center;">
+                        <div style="font-size: 0.65rem; color: #8E8E93;">TEMPO MOYEN</div>
+                        <div style="font-size: 0.92rem; font-weight: 800; color: #FFF;">{archetype_data['stats']['mean_bpm']:.0f} BPM</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 8px; text-align: center;">
+                        <div style="font-size: 0.65rem; color: #8E8E93;">TITRES VALIDÉS</div>
+                        <div style="font-size: 0.92rem; font-weight: 800; color: #FFF;">{len(ecoutes_valides)}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="font-size: 0.7rem; color: #636366; letter-spacing: 0.05em; margin-top: 6px;">
+                ✦ DEEZER PULSE STUDIO • ÉDITION OLED ✦
+            </div>
+        </div>
+    </div>
+
+    <div class="story-controls">
+        <button class="ctrl-btn" onclick="prevSlide(event)">◀ Précédent</button>
+        <span class="slide-num" id="slideNum">1 / 5</span>
+        <button class="ctrl-btn" onclick="nextSlide(event)">Suivant ▶</button>
+    </div>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const totalSlides = 5;
+
+    function updateStory() {{
+        for (let i = 0; i < totalSlides; i++) {{
+            const slide = document.getElementById('slide-' + i);
+            const seg = document.getElementById('seg-' + i);
+            if (slide) {{
+                slide.classList.remove('active');
+                if (i === currentSlide) slide.classList.add('active');
+            }}
+            if (seg) {{
+                seg.classList.remove('active', 'completed');
+                if (i < currentSlide) seg.classList.add('completed');
+                else if (i === currentSlide) seg.classList.add('active');
+            }}
+        }}
+        const numEl = document.getElementById('slideNum');
+        if (numEl) numEl.textContent = (currentSlide + 1) + ' / ' + totalSlides;
+    }}
+
+    function nextSlide(e) {{
+        if (e) e.stopPropagation();
+        if (currentSlide < totalSlides - 1) {{
+            currentSlide++;
+            updateStory();
+        }}
+    }}
+
+    function prevSlide(e) {{
+        if (e) e.stopPropagation();
+        if (currentSlide > 0) {{
+            currentSlide--;
+            updateStory();
+        }}
+    }}
+
+    updateStory();
+
+    document.addEventListener('keydown', function(e) {{
+        if (e.key === 'ArrowRight' || e.key === ' ') {{
+            nextSlide();
+        }} else if (e.key === 'ArrowLeft') {{
+            prevSlide();
+        }}
+    }});
+</script>
+</body>
+</html>"""
 
                 w_col1, w_col2 = st.columns([1, 1])
                 with w_col1:
-                    # Affichage HTML de la Story Card
-                    wrapped_html = f"""
-                    <div style="
-                        background: radial-gradient(circle at 50% 20%, rgba(30, 30, 42, 0.95), rgba(10, 10, 15, 0.98));
-                        border: 2px solid {current_theme['primary']};
-                        border-radius: 28px;
-                        padding: 30px;
-                        max-width: 440px;
-                        margin: 0 auto;
-                        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85);
-                        text-align: center;
-                        font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
-                    ">
-                        <div style="font-size: 0.8rem; font-weight: 700; color: {current_theme['primary']}; letter-spacing: 0.12em; text-transform: uppercase;">
-                            ✦ DEEZER PULSE WRAPPED ✦
-                        </div>
-                        <div style="font-size: 2.2rem; margin: 10px 0 2px 0;">{arch_icon_w}</div>
-                        <div style="font-size: 1.45rem; font-weight: 800; color: #FFFFFF; margin-bottom: 4px;">
-                            {arch_name_w}
-                        </div>
-                        <div style="font-size: 0.82rem; color: #8E8E93; margin-bottom: 20px;">
-                            PROFIL PSYCHOLOGIQUE D'ÉCOUTE
-                        </div>
-                        
-                        <img src="{wrapped_cover}" style="
-                            width: 220px;
-                            height: 220px;
-                            border-radius: 18px;
-                            box-shadow: 0 12px 30px rgba(0,0,0,0.7);
-                            margin-bottom: 18px;
-                            object-fit: cover;
-                        ">
-                        
-                        <div style="background: rgba(255,255,255,0.06); border-radius: 18px; padding: 14px; margin-bottom: 18px; text-align: left;">
-                            <div style="font-size: 0.75rem; color: #8E8E93; text-transform: uppercase;">Top Morceau</div>
-                            <div style="font-size: 1.05rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                {top_track_row[0]}
-                            </div>
-                            <div style="font-size: 0.85rem; color: {current_theme['secondary']};">{top_track_row[1]}</div>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
-                            <div style="background: rgba(255,255,255,0.04); border-radius: 14px; padding: 10px; text-align: center;">
-                                <div style="font-size: 0.7rem; color: #8E8E93;">TEMPS D'ÉCOUTE</div>
-                                <div style="font-size: 1.25rem; font-weight: 700; color: #FFFFFF;">{total_hours_w:.1f} h</div>
-                            </div>
-                            <div style="background: rgba(255,255,255,0.04); border-radius: 14px; padding: 10px; text-align: center;">
-                                <div style="font-size: 0.7rem; color: #8E8E93;">TOP ARTISTE</div>
-                                <div style="font-size: 1.15rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{top_art_name}</div>
-                            </div>
-                        </div>
-
-                        <div style="font-size: 0.72rem; color: #636366; letter-spacing: 0.05em;">
-                            GÉNÉRÉ PAR DEEZER PULSE STUDIO • ÉDITION OLED
-                        </div>
-                    </div>
-                    """
-                    st.markdown(wrapped_html, unsafe_allow_html=True)
+                    components.html(story_html_code, height=680)
 
                 with w_col2:
-                    st.markdown("### 📤 Partager votre Bilan")
-                    st.write("Téléchargez votre Story Card au format HTML autonome (prête à ouvrir en plein écran et à capturer) ou copiez le récapitulatif pour les réseaux sociaux.")
+                    st.markdown("### 📱 Vos Stories Interactives")
+                    st.write("""
+                    Revivez votre année musicale en immersion :
+                    * **Survolez et cliquez** à droite pour la slide suivante, à gauche pour revenir en arrière.
+                    * **Les flèches du clavier** (◀ et ▶) fonctionnent aussi !
+                    """)
+
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown("#### 📥 Télécharger ma Story")
                     
-                    # Téléchargement HTML autonome
-                    standalone_html = f"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Mon Deezer Pulse Wrapped</title>
-</head>
-<body style="background: #000; margin: 0; padding: 40px; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
-    {wrapped_html}
-</body>
-</html>"""
                     st.download_button(
-                        label="📥 Télécharger ma Story Card (HTML)",
-                        data=standalone_html,
-                        file_name="deezer_pulse_wrapped.html",
+                        label="📱 Télécharger la Story Interactive (Fichier HTML complet)",
+                        data=story_html_code,
+                        file_name="mon_deezer_wrapped_story.html",
                         mime="text/html",
                         use_container_width=True
                     )
 
-                    # Texte à copier pour Twitter / Instagram / Discord
+                    st.markdown("<br>", unsafe_allow_html=True)
                     recap_text = f"""✦ MON DEEZER PULSE WRAPPED ✦
 🧬 Archétype : {arch_icon_w} {arch_name_w}
 ⏱️ Temps d'écoute : {total_hours_w:.1f} heures
-👑 Artiste N°1 : {top_art_name}
-🎵 Morceau fétiche : {top_track_row[0]} ({top_track_row[1]})
-💿 Album coup de cœur : {top_album_row[0]}
+👑 Artiste N°1 : {top_a1_name} ({top_a1_mins:.0f} min)
+🎵 Morceau fétiche : {top_t1_title} ({top_t1_artist})
 Généré avec Deezer Pulse Studio"""
 
-                    st.text_area("Texte pour vos réseaux sociaux :", recap_text, height=180)
+                    st.text_area("Texte pour vos réseaux sociaux :", recap_text, height=140)
